@@ -1,5 +1,5 @@
 streamlit
 yt-dlp
-moviepy
+moviepy==1.0.3
 whisper-timestamped
 torch
