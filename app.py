@@ -10,19 +10,27 @@ import torch
 # =====================================================================
 
 def download_youtube_video(url, output_path='video.mp4'):
-    """Mengunduh video YouTube menggunakan format fallback paling aman."""
+    """Mengunduh video YouTube dengan manipulasi klien bawaan untuk menembus galat format."""
     cookie_file = 'youtube.com_cookies.txt'
     
     ydl_opts = {
-        # Menggunakan selektor format yang tidak bergantung pada ekstensi awal
-        # Ini mencegah kegagalan pembacaan format gabungan di server cloud
+        # Menggunakan fallback format apa pun yang tersedia tanpa batasan ketat
         'format': 'bestvideo+bestaudio/best',
         'outtmpl': 'downloaded_temp.%(ext)s',
         'overwrites': True,
         'cachedir': False,
         'nocheckcertificate': True,
         
-        # Mengonversi paksa hasil akhir menjadi MP4 standar
+        # --- PERBAIKAN UTAMA MASALAH FORMAT NOT AVAILABLE ---
+        # Memaksa yt-dlp menggunakan identitas klien spesifik yang tidak membutuhkan JS Challenge
+        'extractor_args': {
+            'youtube': {
+                'client': ['mweb', 'android'],
+                'skip': ['hls', 'dash']
+            }
+        },
+        
+        # Konversi otomatis ke MP4 standar
         'postprocs': [{
             'key': 'FFmpegVideoConvertor',
             'preferedformat': 'mp4',
