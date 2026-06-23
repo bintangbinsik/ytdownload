@@ -1,0 +1,12 @@
+def download_youtube_video(url, output_path='video.mp4'):
+    ydl_opts = {
+        'format': 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best',
+        'outtmpl': output_path,
+        'overwrites': True,
+        
+        # --- MENAMBAHKAN COOKIES AGAR TERDETEKSI SEBAGAI AKUN ASLI ---
+        'cookiefile': 'youtube.com_cookies.txt', 
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([url])
+    return output_path
