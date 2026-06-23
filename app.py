@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 import yt_dlp
-from moviepy import VideoFileClip, TextClip, CompositeVideoClip
+from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip
 import whisper_timestamped as whisper
 import torch
 
