@@ -1,12 +1,26 @@
-def download_youtube_video(url, output_path='video.mp4'):
-    ydl_opts = {
-        'format': 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best',
-        'outtmpl': output_path,
-        'overwrites': True,
-        
-        # --- MENAMBAHKAN COOKIES AGAR TERDETEKSI SEBAGAI AKUN ASLI ---
-        'cookiefile': 'youtube.com_cookies.txt', 
-    }
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
-    return output_path
+# Netscape HTTP Cookie File
+# https://curl.haxx.se/rfc/cookie_spec.html
+# This is a generated file! Do not edit.
+
+.youtube.com	TRUE	/	TRUE	1810130371	LOGIN_INFO	AFmmF2swRQIhANDbOYW078E-_IVwf7NhBDdX0QQPPsm1IEGMWV_TyohnAiADnw9YqSJNI4202ObnPnDbDdyEiQTIh5SO9FTIoBw5zg:QUQ3MjNmeFhkaGdlSGpnMENUcDZFaEFRLUFvd1pHbmZXbFhRTTRVaUZJUlJXNWU2Y0kzaTE4LUZGQ0dndnN5RHZhazY3NkxsTUliYzJzM2lvTGJkQ1dieW9NbFRFMDV3VjRsYlUtM3RPbTdpSjhLRS1weWRDZTJ1alY0dThrekVqekhvT3BhX2ZQUVJWYUZkTkhBTUdneVo5LVptWGlRVDl3
+.youtube.com	TRUE	/	TRUE	1791948552	__Secure-BUCKET	CLwB
+.youtube.com	TRUE	/	FALSE	1816776684	SID	g.a000_QjGuiueIRqnn-m83ENozti7XwZrv8Bhh0O70b4DFb-ACtGA2hwJ5zyHVipHX8PB7qZS5wACgYKAbcSARUSFQHGX2MiCgQrKMedOGElIAHjh_vH8RoVAUF8yKofDrUVVOuvWIHkl5we-pzi0076
+.youtube.com	TRUE	/	TRUE	1816776684	__Secure-1PSID	g.a000_QjGuiueIRqnn-m83ENozti7XwZrv8Bhh0O70b4DFb-ACtGAzpnp_869N0mB0tluujiD2gACgYKAQ0SARUSFQHGX2MipZFFU2l6i3vp2jBIy53AfxoVAUF8yKqdrqt7ycOVgu9v0MxhElK-0076
+.youtube.com	TRUE	/	TRUE	1816776684	__Secure-3PSID	g.a000_QjGuiueIRqnn-m83ENozti7XwZrv8Bhh0O70b4DFb-ACtGA_vjB1MATbg6ZyqI5iPMUzQACgYKAYASARUSFQHGX2Mi70T1J0X3AdsGhrPHdmqkChoVAUF8yKoWvk5TSNeci3UYAhTOSC060076
+.youtube.com	TRUE	/	FALSE	1816776684	HSID	APY7z948i3fZ8jk4c
+.youtube.com	TRUE	/	TRUE	1816776684	SSID	A76hgCw9wX95IOKmD
+.youtube.com	TRUE	/	FALSE	1816776684	APISID	vx3frFmrXO41n7jx/AFGSGgPYyD77JIE2G
+.youtube.com	TRUE	/	TRUE	1816776684	SAPISID	g541alTgsRL28DvF/Ah9qvfZb8IBdU_Jm5
+.youtube.com	TRUE	/	TRUE	1816776684	__Secure-1PAPISID	g541alTgsRL28DvF/Ah9qvfZb8IBdU_Jm5
+.youtube.com	TRUE	/	TRUE	1816776684	__Secure-3PAPISID	g541alTgsRL28DvF/Ah9qvfZb8IBdU_Jm5
+.youtube.com	TRUE	/	TRUE	1816776730	PREF	f7=100&tz=Asia.Bangkok&f5=20000
+.youtube.com	TRUE	/	TRUE	1813752751	__Secure-1PSIDTS	sidts-CjIByojQU-4Br2TMdJHL93n2uyP-qukS9p682eMtbT_9Wj6goXbI4HFlZDzxRAEivtOQNRAA
+.youtube.com	TRUE	/	TRUE	1813752751	__Secure-3PSIDTS	sidts-CjIByojQU-4Br2TMdJHL93n2uyP-qukS9p682eMtbT_9Wj6goXbI4HFlZDzxRAEivtOQNRAA
+.youtube.com	TRUE	/	FALSE	1813752754	SIDCC	AKEyXzUCuZg2Q-hk5G_sftvuM9cW8FHSZjReJeGR7u6uGeKvC68AYioBVVm5k0I_5daNsQcg
+.youtube.com	TRUE	/	TRUE	1813752754	__Secure-1PSIDCC	AKEyXzWePePa9yDrAp6ZxjhOsVHuPMw0a6hG4dNkD75tj08hVoVqLnlsOQQ1MAEwkrZ6RL6N
+.youtube.com	TRUE	/	TRUE	1813752754	__Secure-3PSIDCC	AKEyXzVxZg9jEVlZ6yd-0whwwRJu4Fp4y0H1LvJOf3dDpuWqiBqnXiMX5c3izJu8kseNdwbL
+.youtube.com	TRUE	/	TRUE	1797768754	VISITOR_INFO1_LIVE	GVU8Eor-hfg
+.youtube.com	TRUE	/	TRUE	1797768754	VISITOR_PRIVACY_METADATA	CgJJRBIEGgAgVg%3D%3D
+.youtube.com	TRUE	/	TRUE	0	YSC	0Im12JKPdp0
+.youtube.com	TRUE	/	TRUE	1797768706	__Secure-ROLLOUT_TOKEN	CJ6O3ZaXpNPoLRDPx4mJ89uTAxjfmb3Nqp2VAw%3D%3D
+.youtube.com	TRUE	/	TRUE	1797768710	__Secure-YNID	19.YT=jTDoMwRmg6JbPy6YDiWicsIk4AmjY3r6OIUb6rPZHOCUraonFEcIYSExR4Y1bHf64NGeMyV1O2QW94H2cYhR3uRveUtpw-v8sYBpexZT3LBEa0INIrjKXzI3YZPxoa_JOTu2oP1Vw6U5gu8SGXDlanEqxJT7uMMuO4FGKfqacf5VnPW_yCz5lP8qRWKoaNUb4X_OLuwoomEkLiaHq-_LXdSgcjq6GnueNkpauZtUjvsdUA3cBaGThADAB3p7jGRXQifRbz0IHwZmVu1uX57Zc3AVkIW9IESFkYC04or8ekgkDfB4BZrtbSeEdu2FU1Mvpm3HfGEFl4u7MA0JMaBo5g
