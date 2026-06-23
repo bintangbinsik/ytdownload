@@ -1,0 +1,5 @@
+streamlit
+yt-dlp
+moviepy
+whisper-timestamped
+torch
