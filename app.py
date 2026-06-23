@@ -1,43 +1,27 @@
 import streamlit as st
 import os
 import yt_dlp
-from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip
+from moviepy.editor import ColorClip, TextClip, CompositeVideoClip, AudioFileClip
 import whisper_timestamped as whisper
 import torch
 
-# =====================================================================
-# FUNCTION BACKEND: UNDUH, POTONG, & SUBTITLE VIDEO
-# =====================================================================
-
-def download_youtube_video(url, output_path='video.mp4'):
-    """Mengunduh video YouTube dengan manipulasi klien bawaan untuk menembus galat format."""
+def download_youtube_audio(url, output_path='audio.mp4'):
+    """Mengunduh trek audio YouTube saja dengan konversi aman untuk menghindari blokir format."""
     cookie_file = 'youtube.com_cookies.txt'
     
     ydl_opts = {
-        # Menggunakan fallback format apa pun yang tersedia tanpa batasan ketat
-        'format': 'bestvideo+bestaudio/best',
-        'outtmpl': 'downloaded_temp.%(ext)s',
+        # Mengunduh audio terbaik saja (sangat jarang diblokir oleh YouTube)
+        'format': 'bestaudio/best',
+        'outtmpl': 'downloaded_audio_temp.%(ext)s',
         'overwrites': True,
         'cachedir': False,
         'nocheckcertificate': True,
         
-        # --- PERBAIKAN UTAMA MASALAH FORMAT NOT AVAILABLE ---
-        # Memaksa yt-dlp menggunakan identitas klien spesifik yang tidak membutuhkan JS Challenge
-        'extractor_args': {
-            'youtube': {
-                'client': ['mweb', 'android'],
-                'skip': ['hls', 'dash']
-            }
-        },
-        
-        # Konversi otomatis ke MP4 standar
+        # Mengonversi paksa trek audio ke format m4a/mp3 yang kompatibel dengan MoviePy
         'postprocs': [{
-            'key': 'FFmpegVideoConvertor',
-            'preferedformat': 'mp4',
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'm4a',
         }],
-        'postprocessor_args': {
-            'video_convertor': ['-c:v', 'libx264', '-c:a', 'aac']
-        }
     }
     
     if os.path.exists(cookie_file):
@@ -50,7 +34,8 @@ def download_youtube_video(url, output_path='video.mp4'):
             pass
         
         ydl.extract_info(url, download=True)
-        downloaded_file = 'downloaded_temp.mp4'
+        # Output hasil ekstraksi audio otomatis berformat .m4a
+        downloaded_file = 'downloaded_audio_temp.m4a'
         
         if os.path.exists(downloaded_file):
             if os.path.exists(output_path):
@@ -59,123 +44,98 @@ def download_youtube_video(url, output_path='video.mp4'):
             
     return output_path
 
-def crop_to_shorts(video_path, start_time, end_time, output_path='shorts_cropped.mp4'):
-    """Memotong durasi video dan mengubah aspek rasio menjadi vertikal (9:16)."""
-    clip = VideoFileClip(video_path).subclip(start_time, end_time)
-    w, h = clip.size
-    new_w = int(h * 9 / 16)
+def make_shorts_with_subtitles(audio_path, start_time, end_time, output_path='shorts_final.mp4'):
+    """Memotong durasi audio, mendeteksi teks AI Whisper, dan membuat video vertikal bersubtitle."""
+    # 1. Potong durasi file audio asli
+    full_audio = AudioFileClip(audio_path)
+    cut_audio = full_audio.subclip(start_time, end_time)
+    cut_audio.write_audiofile('temp_cut.wav', logger=None)
     
-    # Memotong bagian tengah video otomatis (Center Crop)
-    cropped_clip = clip.crop(x_center=w/2, width=new_w, height=h)
-    cropped_clip.write_videofile(output_path, codec="libx264", audio_codec="aac", logger=None)
-    
-    # Menutup clip asli untuk mengosongkan memori RAM
-    clip.close()
-    cropped_clip.close()
-    return output_path
-
-def generate_subtitles(video_path, output_path='shorts_final.mp4'):
-    """Mendeteksi suara dengan AI Whisper dan menempelkan subtitle per kata."""
-    audio = whisper.load_audio(video_path)
-    
-    # Otomatis menggunakan GPU jika tersedia, jika tidak akan memakai CPU
+    # 2. Proses AI Whisper untuk ekstraksi teks subtitle dari potongan audio
+    audio_data = whisper.load_audio('temp_cut.wav')
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    
-    # Menggunakan model 'tiny' karena sangat ringan dan aman untuk server gratis
     model = whisper.load_model("tiny", device=device) 
-    result = whisper.transcribe(model, audio, language="id")
+    result = whisper.transcribe(model, audio_data, language="id")
 
-    video = VideoFileClip(video_path)
+    # 3. Membuat kanvas latar belakang vertikal Shorts (Ukuran 720x1280 rasio 9:16)
+    duration = end_sec - start_sec
+    bg_clip = ColorClip(size=(720, 1280), color=(15, 15, 15)).set_duration(duration)
+    
     text_clips = []
-
-    # Memproses penempatan kata dan timestamp hasil transkripsi AI
+    # Memproses penempatan kata hasil transkripsi AI ke kanvas video
     for segment in result['segments']:
         for word_info in segment['words']:
             text = word_info['text']
             start = word_info['start']
             end = word_info['end']
             
-            # Membuat komponen teks (Subtitle bergaya kuning tebal dengan garis tepi hitam)
-            txt_clip = (TextClip(text, fontsize=42, color='yellow', font='Liberation-Sans-Bold', 
-                                 stroke_color='black', stroke_width=2)
+            # Subtitle teks kuning tebal dengan garis tepi hitam di tengah layar
+            txt_clip = (TextClip(text, fontsize=55, color='yellow', font='Liberation-Sans-Bold', 
+                                 stroke_color='black', stroke_width=3)
                         .set_start(start)
                         .set_duration(end - start)
-                        .set_position(('center', 0.75), relative=True)) # Posisi di area bawah video
+                        .set_position(('center', 'center')))
             text_clips.append(txt_clip)
 
-    # Menggabungkan video vertikal dengan semua potongan teks subtitle
-    final_video = CompositeVideoClip([video] + text_clips)
-    final_video.write_videofile(output_path, codec="libx264", audio_codec="aac", logger=None)
+    # 4. Menggabungkan latar belakang, semua teks subtitle, dan memasukkan trek audio potongan
+    final_video = CompositeVideoClip([bg_clip] + text_clips)
+    final_video = final_video.set_audio(cut_audio)
     
-    # Menutup semua clip setelah selesai untuk mencegah kebocoran memori RAM
-    video.close()
+    # Simpan hasil akhir ke file video mp4
+    final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac", logger=None)
+    
+    # Tutup aset memori untuk mencegah crash server
+    full_audio.close()
+    cut_audio.close()
+    bg_clip.close()
     final_video.close()
     for tc in text_clips:
         tc.close()
         
+    if os.path.exists('temp_cut.wav'): os.remove('temp_cut.wav')
     return output_path
 
 # =====================================================================
-# FRONTEND INTERFACE: TAMPILAN WEBSITE STREAMLIT
+# TAMPILAN INTERFACES STREAMLIT
 # =====================================================================
+st.set_page_config(page_title="AI Audio Shorts Generator", page_icon="🎙️")
 
-st.set_page_config(page_title="Auto Shorts Generator", page_icon="🎬", layout="centered")
+st.title("🎙️ AI Audio-to-Shorts Generator")
+st.write("Ekstrak audio dari video YouTube panjang dan ubah menjadi video Shorts vertikal dengan subtitle otomatis.")
 
-st.title("🎬 AI YouTube to Shorts Generator")
-st.write("Ubah video YouTube panjang menjadi Shorts vertikal 9:16 lengkap dengan subtitle otomatis bahasa Indonesia.")
-
-# Kolom Input URL dari pengguna
-url_input = st.text_input("Masukkan URL Video YouTube:", placeholder="https://youtube.com...")
-
-# Kolom Input Durasi Potong Video
+url_input = st.text_input("Masukkan URL Video YouTube:")
 col1, col2 = st.columns(2)
 with col1:
-    start_sec = st.number_input("Mulai dari detik ke-:", min_value=0, value=10, step=1)
+    start_sec = st.number_input("Mulai dari detik ke-:", min_value=0, value=10)
 with col2:
-    end_sec = st.number_input("Selesai pada detik ke-:", min_value=1, value=25, step=1)
+    end_sec = st.number_input("Selesai pada detik ke-:", min_value=1, value=25)
 
-# Tombol untuk mengeksekusi program
-if st.button("🚀 Mulai Proses Video", type="primary"):
+if st.button("🚀 Mulai Proses Pembuatan Shorts", type="primary"):
     if not url_input:
-        st.error("Silakan masukkan tautan URL YouTube terlebih dahulu!")
+        st.error("Silakan masukkan URL YouTube terlebih dahulu!")
     elif start_sec >= end_sec:
-        st.error("Detik mulai harus lebih kecil dari detik selesai video!")
+        st.error("Detik mulai harus lebih kecil dari detik selesai!")
     elif (end_sec - start_sec) > 30:
-        st.warning("Demi stabilitas server gratis, durasi video dibatasi maksimal 30 detik.")
+        st.warning("Durasi video dibatasi maksimal 30 detik demi stabilitas server.")
     else:
         try:
-            # Container status pengingat proses
             status = st.empty()
             
-            status.info("📥 Langkah 1: Sedang mengunduh video dari YouTube...")
-            raw_video = download_youtube_video(url_input)
+            status.info("📥 Langkah 1: Sedang mengunduh audio YouTube (Aman dari Blokir)...")
+            raw_audio = download_youtube_audio(url_input)
             
-            status.info("✂️ Langkah 2: Memotong video menjadi format vertikal (9:16)...")
-            cropped_video = crop_to_shorts(raw_video, start_sec, end_sec)
+            status.info("✍️ Langkah 2: AI Whisper mendeteksi suara & merangkai video subtitle...")
+            final_output = make_shorts_with_subtitles(raw_audio, start_sec, end_sec)
             
-            status.info("✍️ Langkah 3: AI Whisper sedang memproses teks & menempelkan subtitle...")
-            final_output = generate_subtitles(cropped_video)
-            
-            # Bersihkan status info setelah berhasil
             status.empty()
             st.success("🎉 Video Shorts Berhasil Dibuat!")
-            
-            # Menampilkan pratinjau video hasil akhir langsung di browser
             st.video(final_output)
             
-            # Menyediakan tombol download instan untuk pengguna
             with open(final_output, "rb") as file:
-                st.download_button(
-                    label="💾 Download Video Shorts",
-                    data=file,
-                    file_name="shorts_output.mp4",
-                    mime="video/mp4"
-                )
+                st.download_button(label="💾 Download Video Shorts", data=file, file_name="shorts_audio_output.mp4", mime="video/mp4")
                 
-            # Membersihkan file sampah temporary di server setelah berhasil didownload
-            if os.path.exists(raw_video): os.remove(raw_video)
-            if os.path.exists(cropped_video): os.remove(cropped_video)
+            if os.path.exists(raw_audio): os.remove(raw_audio)
             if os.path.exists(final_output): os.remove(final_output)
                 
         except Exception as e:
-            st.error(f"Terjadi kendala teknis saat memproses video: {str(e)}")
+            st.error(f"Terjadi kendala teknis saat memproses: {str(e)}")
