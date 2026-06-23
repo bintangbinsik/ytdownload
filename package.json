@@ -1,0 +1,14 @@
+{
+  "name": "yt-shorts-generator",
+  "version": "1.0.0",
+  "description": "Generator Shorts Otomatis dengan Node.js",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "youtube-transcript": "^1.1.0",
+    "fluent-ffmpeg": "^2.1.3"
+  }
+}
