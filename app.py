@@ -10,29 +10,47 @@ import torch
 # =====================================================================
 
 def download_youtube_video(url, output_path='video.mp4'):
-    """Mengunduh video YouTube dengan bantuan file cookie untuk menghindari blokir 403."""
+    """Mengunduh video YouTube dengan format otomatis dan konversi paksa ke MP4."""
     cookie_file = 'youtube.com_cookies.txt'
     
     ydl_opts = {
-        'format': 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best',
-        'outtmpl': output_path,
+        # Mencari video kualitas maksimal 720p terbaik (format apa saja), lalu digabung dengan audio terbaik
+        'format': 'bestvideo[height<=720]+bestaudio/best[height<=720]/best',
+        'outtmpl': 'downloaded_temp.%(ext)s', # Menyimpan sementara sesuai format asli dari YouTube
         'overwrites': True,
         'cachedir': False,
+        
+        # --- SOLUSI FORMAT NOT AVAILABLE ---
+        # Memaksa yt-dlp mengonversi hasil unduhan akhir menjadi format MP4 secara otomatis menggunakan FFmpeg
+        'postprocs': [{
+            'key': 'FFmpegVideoConvertor',
+            'preferedformat': 'mp4',
+        }],
     }
     
-    # Memeriksa apakah file cookie tersedia di server
+    # Memeriksa dan menerapkan file cookie jika tersedia
     if os.path.exists(cookie_file):
         ydl_opts['cookiefile'] = cookie_file
-    else:
-        # Jika file cookie belum terdeteksi, berikan peringatan di log server
-        print("Peringatan: File youtube.com_cookies.txt tidak ditemukan. Berjalan tanpa cookie.")
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             ydl.cache.remove()
         except Exception:
             pass
-        ydl.download([url])
+        
+        # Proses mengunduh
+        info = ydl.extract_info(url, download=True)
+        
+        # Menentukan nama file hasil konversi akhir (.mp4)
+        # yt-dlp otomatis mengubah ekstensi menjadi .mp4 karena perintah postprocs di atas
+        downloaded_file = 'downloaded_temp.mp4'
+        
+        # Mengubah nama file akhir menjadi sesuai parameter output_path ('video.mp4')
+        if os.path.exists(downloaded_file):
+            if os.path.exists(output_path):
+                os.remove(output_path)
+            os.rename(downloaded_file, output_path)
+            
     return output_path
 
 def crop_to_shorts(video_path, start_time, end_time, output_path='shorts_cropped.mp4'):
