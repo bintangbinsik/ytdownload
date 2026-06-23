@@ -10,25 +10,27 @@ import torch
 # =====================================================================
 
 def download_youtube_video(url, output_path='video.mp4'):
-    """Mengunduh video YouTube dengan format otomatis dan konversi paksa ke MP4."""
+    """Mengunduh video dengan seleksi format universal dan konversi paksa ke MP4 standar."""
     cookie_file = 'youtube.com_cookies.txt'
     
     ydl_opts = {
-        # Mencari video kualitas maksimal 720p terbaik (format apa saja), lalu digabung dengan audio terbaik
-        'format': 'bestvideo[height<=720]+bestaudio/best[height<=720]/best',
-        'outtmpl': 'downloaded_temp.%(ext)s', # Menyimpan sementara sesuai format asli dari YouTube
+        # 'best': Mengambil format video+audio yang sudah menyatu bawaan YouTube agar tidak gagal gabung
+        'format': 'best[height<=720]/best',
+        'outtmpl': 'downloaded_temp.%(ext)s',
         'overwrites': True,
         'cachedir': False,
         
-        # --- SOLUSI FORMAT NOT AVAILABLE ---
-        # Memaksa yt-dlp mengonversi hasil unduhan akhir menjadi format MP4 secara otomatis menggunakan FFmpeg
+        # Memaksa konversi menyeluruh ke MP4 standar dengan codec video libx264 dan audio aac
+        # Ini menjamin file output pasti bisa dibaca dan dipotong oleh MoviePy tanpa error codec
         'postprocs': [{
             'key': 'FFmpegVideoConvertor',
             'preferedformat': 'mp4',
         }],
+        'postprocessor_args': {
+            'video_convertor': ['-c:v', 'libx264', '-c:a', 'aac']
+        }
     }
     
-    # Memeriksa dan menerapkan file cookie jika tersedia
     if os.path.exists(cookie_file):
         ydl_opts['cookiefile'] = cookie_file
 
@@ -38,14 +40,9 @@ def download_youtube_video(url, output_path='video.mp4'):
         except Exception:
             pass
         
-        # Proses mengunduh
-        info = ydl.extract_info(url, download=True)
-        
-        # Menentukan nama file hasil konversi akhir (.mp4)
-        # yt-dlp otomatis mengubah ekstensi menjadi .mp4 karena perintah postprocs di atas
+        ydl.extract_info(url, download=True)
         downloaded_file = 'downloaded_temp.mp4'
         
-        # Mengubah nama file akhir menjadi sesuai parameter output_path ('video.mp4')
         if os.path.exists(downloaded_file):
             if os.path.exists(output_path):
                 os.remove(output_path)
