@@ -10,18 +10,18 @@ import torch
 # =====================================================================
 
 def download_youtube_video(url, output_path='video.mp4'):
-    """Mengunduh video dengan seleksi format universal dan konversi paksa ke MP4 standar."""
+    """Mengunduh video dengan melepas semua filter format agar lolos pembatasan YouTube."""
     cookie_file = 'youtube.com_cookies.txt'
     
     ydl_opts = {
-        # 'best': Mengambil format video+audio yang sudah menyatu bawaan YouTube agar tidak gagal gabung
-        'format': 'best[height<=720]/best',
+        # --- PERBAIKAN TOTAL FORMAT NOT AVAILABLE ---
+        # Menghapus filter 'height<=720' agar yt-dlp bebas mengambil format apa pun yang lolos dari blokir YouTube
+        'format': 'b/bv+ba', 
         'outtmpl': 'downloaded_temp.%(ext)s',
         'overwrites': True,
         'cachedir': False,
         
         # Memaksa konversi menyeluruh ke MP4 standar dengan codec video libx264 dan audio aac
-        # Ini menjamin file output pasti bisa dibaca dan dipotong oleh MoviePy tanpa error codec
         'postprocs': [{
             'key': 'FFmpegVideoConvertor',
             'preferedformat': 'mp4',
