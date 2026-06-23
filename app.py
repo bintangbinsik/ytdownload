@@ -10,14 +10,27 @@ import torch
 # =====================================================================
 
 def download_youtube_video(url, output_path='video.mp4'):
-    """Mengunduh video YouTube dengan opsi optimasi agar hemat memori."""
+    """Mengunduh video YouTube dengan membersihkan cache dan meniru browser asli."""
     ydl_opts = {
-        # Mengunduh kualitas menengah (maksimal 720p) agar server Streamlit tidak crash
         'format': 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best',
         'outtmpl': output_path,
-        'overwrites': True
+        'overwrites': True,
+        
+        # --- PERBAIKAN ERROR 403 FORBIDDEN ---
+        'cachedir': False,                        # Jangan simpan data cache lokal lama yang terblokir
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-us,en;q=0.5',
+        },
+        'impersonate': 'chrome',                   # Memaksa yt-dlp bertingkah seperti Google Chrome asli
     }
+    
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        try:
+            ydl.cache.remove()                     # Paksa hapus sisa cache sebelum mengunduh
+        except Exception:
+            pass
         ydl.download([url])
     return output_path
 
