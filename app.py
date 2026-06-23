@@ -10,30 +10,26 @@ import torch
 # =====================================================================
 
 def download_youtube_video(url, output_path='video.mp4'):
-    """Mengunduh video YouTube dengan manipulasi klien untuk menghindari blokir 403."""
+    """Mengunduh video YouTube dengan bantuan file cookie untuk menghindari blokir 403."""
+    cookie_file = 'youtube.com_cookies.txt'
+    
     ydl_opts = {
-        # Mengunduh kualitas menengah agar server Streamlit tidak kehabisan RAM/Crash
         'format': 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best',
         'outtmpl': output_path,
         'overwrites': True,
-        
-        # --- PERBAIKAN ERROR IMPERSONATE & HTTP 403 ---
-        'cachedir': False,                        # Menghapus pelacakan cache lama
-        'extractor_args': {
-            'youtube': {
-                # Memaksa yt-dlp berpura-pura menjadi aplikasi resmi Android/iOS/Web
-                # Ini adalah cara paling efektif saat ini untuk menembus blokir server hosting
-                'client': ['android', 'ios', 'web', 'mweb']
-            }
-        },
-        'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        }
+        'cachedir': False,
     }
     
+    # Memeriksa apakah file cookie tersedia di server
+    if os.path.exists(cookie_file):
+        ydl_opts['cookiefile'] = cookie_file
+    else:
+        # Jika file cookie belum terdeteksi, berikan peringatan di log server
+        print("Peringatan: File youtube.com_cookies.txt tidak ditemukan. Berjalan tanpa cookie.")
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
-            ydl.cache.remove()                     # Hapus sisa cache sebelum proses unduh
+            ydl.cache.remove()
         except Exception:
             pass
         ydl.download([url])
