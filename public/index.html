@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Node.js AI Shorts Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #121212; color: white; text-align: center; padding: 50px; }
+        .container { max-width: 500px; margin: 0 auto; background: #1e1e1e; padding: 30px; border-radius: 10px; }
+        input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 5px; border: none; box-sizing: border-box; }
+        input { background: #333; color: white; }
+        button { background: #ff4757; color: white; font-weight: bold; cursor: pointer; }
+        button:disabled { background: #555; }
+        #status { margin-top: 15px; color: #ffa500; }
+        video { width: 100%; margin-top: 20px; border-radius: 5px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🎬 Node.js Shorts Generator</h2>
+        <p>Ubah subtitle YouTube menjadi video kutipan vertikal secara instan.</p>
+        
+        <input type="text" id="url" placeholder="Masukkan URL YouTube...">
+        <input type="number" id="startSec" placeholder="Mulai dari detik ke- (Contoh: 10)" value="10">
+        <input type="number" id="endSec" placeholder="Selesai pada detik ke- (Contoh: 25)" value="25">
+        
+        <button id="btn" onclick="generateShorts()">🚀 Mulai Buat Video</button>
+        <div id="status"></div>
+        
+        <video id="outputVideo" controls></video>
+    </div>
+
+    <script>
+        async function generateShorts() {
+            const url = document.getElementById('url').value;
+            const startSec = parseInt(document.getElementById('startSec').value);
+            const endSec = parseInt(document.getElementById('endSec').value);
+            const btn = document.getElementById('btn');
+            const status = document.getElementById('status');
+            const video = document.getElementById('outputVideo');
+
+            if (!url) return alert('Mohon masukkan URL terlebih dahulu!');
+
+            btn.disabled = true;
+            status.innerText = "⏳ Sedang mengekstrak teks & merangkai video...";
+            video.style.display = "none";
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, startSec, endSec })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    status.innerHTML = "🎉 Video Berhasil Dibuat!<br><small style='color:#ccc'>Teks: " + data.text + "</small>";
+                    video.src = data.videoUrl;
+                    video.style.display = "block";
+                } else {
+                    status.innerText = "❌ Gagal: " + data.error;
+                }
+            } catch (err) {
+                status.innerText = "❌ Terjadi kesalahan jaringan.";
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
