@@ -10,18 +10,19 @@ import torch
 # =====================================================================
 
 def download_youtube_video(url, output_path='video.mp4'):
-    """Mengunduh video dengan melepas semua filter format agar lolos pembatasan YouTube."""
+    """Mengunduh video YouTube menggunakan format fallback paling aman."""
     cookie_file = 'youtube.com_cookies.txt'
     
     ydl_opts = {
-        # --- PERBAIKAN TOTAL FORMAT NOT AVAILABLE ---
-        # Menghapus filter 'height<=720' agar yt-dlp bebas mengambil format apa pun yang lolos dari blokir YouTube
-        'format': 'b/bv+ba', 
+        # Menggunakan selektor format yang tidak bergantung pada ekstensi awal
+        # Ini mencegah kegagalan pembacaan format gabungan di server cloud
+        'format': 'bestvideo+bestaudio/best',
         'outtmpl': 'downloaded_temp.%(ext)s',
         'overwrites': True,
         'cachedir': False,
+        'nocheckcertificate': True,
         
-        # Memaksa konversi menyeluruh ke MP4 standar dengan codec video libx264 dan audio aac
+        # Mengonversi paksa hasil akhir menjadi MP4 standar
         'postprocs': [{
             'key': 'FFmpegVideoConvertor',
             'preferedformat': 'mp4',
